@@ -8,8 +8,8 @@ from pyhec import PyHEC
 This lambda function requires two variables to be set:
  - host - http-inputs-gds.splunkcloud.com
  - token - Generate from: https://gds.splunkcloud.com/en-GB/manager/search/http-eventcollector
- 
-This takes kubernetes fluentd log events from cloudwatch logs and 
+
+This takes kubernetes fluentd log events from cloudwatch logs and
 sends them to the splunk HEC
 """
 
@@ -21,23 +21,21 @@ def lambda_handler(event, context):
     log_events = data['logEvents']
     payload = build_payload(log_events, context)
     send_to_hec(payload)
-    
+
 def build_payload(log_events, context):
     payload = ""
     for log in log_events:
         log = json.loads(log['message'])
         event = {
-                    "host": context.invoked_function_arn.split(':')[4],
-                    "source": context.log_group_name.split('/')[-1],
+                    "host": log['kubernetes']['pod_name'],
+                    "source": os.environ['CLUSTER_NAME'],
                     "sourcetype": log['kubernetes']['container_name'],
-                    "index": "verify_notifications_test",
+                    "index": "gsp_verify_notifications",
                     "event": log['log']
                 }
         payload += json.dumps(event)
     return payload
-    
+
 def send_to_hec(payload):
-    hec = PyHEC(os.environ['token'], os.environ['host'])
+    hec = PyHEC(os.environ['SPLUNK_HEC_TOKEN'], os.environ['SPLUNK_HEC_URL'])
     hec.send(payload)
-
-
