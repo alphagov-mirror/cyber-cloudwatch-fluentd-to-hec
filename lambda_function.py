@@ -29,7 +29,7 @@ def build_payload(log_events, context):
         log = json.loads(log['message'])
         event = {
                     "host": log['kubernetes']['pod_name'],
-                    "source": os.environ['CLUSTER_NAME'],
+                    "source": context.log_group_name.split('/')[-1],
                     "sourcetype": log['kubernetes']['container_name'],
                     "index": "gsp_verify_notifications",
                     "event": log['log']
