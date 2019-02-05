@@ -8,6 +8,7 @@ from pyhec import PyHEC
 This lambda function requires two variables to be set:
  - SPLUNK_HEC_URL - http-inputs-gds.splunkcloud.com
  - SPLUNK_HEC_TOKEN - Generate from: https://gds.splunkcloud.com/en-GB/manager/search/http-eventcollector
+ - SPLUNK_INDEX
 
 This takes kubernetes fluentd log events from cloudwatch logs and
 sends them to the splunk HEC
@@ -30,7 +31,7 @@ def build_payload(log_events, context):
                     "host": log['kubernetes']['pod_name'],
                     "source": context.log_group_name.split('/')[-1],
                     "sourcetype": log['kubernetes']['container_name'],
-                    "index": "gsp_verify_notifications",
+                    "index": os.environ['SPLUNK_INDEX'],
                     "event": log['log']
                 }
         payload += json.dumps(event)
