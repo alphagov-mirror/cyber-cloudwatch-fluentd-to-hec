@@ -20,16 +20,17 @@ def lambda_handler(event, context):
     uncompressed_data = gzip.decompress(compressed_data)
     data = json.loads(uncompressed_data)
     log_events = data['logEvents']
-    payload = build_payload(log_events, context)
+    cluster_name = data['logGroup']
+    payload = build_payload(cluster_name, log_events)
     send_to_hec(payload)
 
-def build_payload(log_events, context):
+def build_payload(cluster_name, log_events):
     payload = ""
     for log in log_events:
         log = json.loads(log['message'])
         event = {
                     "host": log['kubernetes']['pod_name'],
-                    "source": context.log_group_name.split('/')[-1],
+                    "source": cluster_name,
                     "sourcetype": log['kubernetes']['container_name'],
                     "index": os.environ['SPLUNK_INDEX'],
                     "event": log['log']
