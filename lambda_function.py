@@ -10,8 +10,8 @@ This lambda function requires two variables to be set:
  - SPLUNK_HEC_URL - http-inputs-gds.splunkcloud.com
  - SPLUNK_HEC_TOKEN - Generate from: https://gds.splunkcloud.com/en-GB/manager/search/http-eventcollector
  - SPLUNK_INDEX - Name of the index agreed upon
-This takes kubernetes fluentd log events from cloudwatch logs and
-sends them to the splunk HEC
+ 
+This takes kubernetes fluentd and HSM audit log events from cloudwatch logs and sends them to the splunk HEC
 """
 
 def lambda_handler(event, context):
@@ -25,7 +25,7 @@ def lambda_handler(event, context):
     if 'hsm' in os.environ['SPLUNK_INDEX']:
         payload = build_payload_hsm(data,context)
     send_to_hec(payload)
-    print(payload)
+    
 
 def build_payload_k8s(data):
     payload = ""
@@ -61,5 +61,4 @@ def build_payload_hsm(data,context):
 
 def send_to_hec(payload):
      hec = PyHEC(os.environ['SPLUNK_HEC_TOKEN'], os.environ['SPLUNK_HEC_URL'])
-     print("sending to HEC")
      hec.send(payload)
