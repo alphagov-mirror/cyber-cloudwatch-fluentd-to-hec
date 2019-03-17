@@ -57,8 +57,7 @@ def build_payload_hsm(data,context):
                 }
         payload += json.dumps(event)
     return payload
-    
-
+   
 def send_to_hec(payload):
      hec = PyHEC(os.environ['SPLUNK_HEC_TOKEN'], os.environ['SPLUNK_HEC_URL'])
      hec.send(payload)

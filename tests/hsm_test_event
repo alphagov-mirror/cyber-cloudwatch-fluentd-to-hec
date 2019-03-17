@@ -1,0 +1,10 @@
+Time: 02/18/19 12:13:50.326973, usecs:1550492030326973
+Sequence No		: 0xd
+Reboot counter		: 0xd
+Command Type(hex)	: CN_MGMT_CMD (0x0)
+Opcode			: CN_LOGIN (0xd)
+Session Handle		: 0x2010005
+Response		: 206:HSM Error: This user doesn't exist
+Log type		: MGMT_USER_DETAILS_LOG (2)
+User Name		: ahahah
+User Type		: CN_CRYPTO_USER (1)
