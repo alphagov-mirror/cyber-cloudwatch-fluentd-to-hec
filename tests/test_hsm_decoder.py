@@ -19,8 +19,8 @@ def hsm_login_error():
 
 
 @pytest.fixture(scope='module')
-def hsm_login_success():
-    with open("tests/fixtures/hsm_login_error_user_doesnt_exist", "r") as f:
+def hsm_wrap_key():
+    with open("tests/fixtures/hsm_wrap_key", "r") as f:
         hsm_test_event = f.read()
     return json.loads(jsoniser(hsm_test_event))
 
@@ -55,7 +55,17 @@ def test_jsonizer_can_extract_response(hsm_login_error):
     )
 
 
-def test_jsonizer_can_extract_log_type(hsm_login_error):
-    assert hsm_login_error['log_details'] == (
-        '\nUser Name\t\t: ahahah\nUser Type\t\t: CN_CRYPTO_USER (1)\n'
-    )
+def test_jsonizer_can_extract_username(hsm_login_error):
+    assert hsm_login_error['username'] == 'ahahah'
+
+
+def test_jsonizer_can_extract_usertype(hsm_login_error):
+    assert hsm_login_error['usertype'] == 'CN_CRYPTO_USER (1)'
+
+
+def test_jsonizer_can_extract_private_key_handle(hsm_wrap_key):
+    assert hsm_wrap_key['private_key_handle'] == '6'
+
+
+def test_jsonizer_can_extract_public_key_handle(hsm_wrap_key):
+    assert hsm_wrap_key['public_key_handle'] == '0'
