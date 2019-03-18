@@ -2,8 +2,8 @@ import os
 import gzip
 import json
 import base64
-from .pyhec import PyHEC
-from . import hsmdecoder
+from pyhec import PyHEC
+import hsmdecoder
 
 """
 This lambda function requires two variables to be set:

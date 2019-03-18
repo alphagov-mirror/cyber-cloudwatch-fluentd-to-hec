@@ -1,0 +1,10 @@
+Time: 01/24/18 19:51:12.905257, usecs:1516823472905257
+Sequence No : 0x28
+Reboot counter : 0x107
+Command Type(hex) : CN_MGMT_CMD (0x0)
+Opcode : CN_NIST_AES_WRAP (0x1e)
+Session Handle : 0x7004003
+Response : 0:HSM Return: SUCCESS
+Log type : MGMT_KEY_DETAILS_LOG (1)
+Priv/Secret Key Handle : 6
+Public Key Handle : 0
