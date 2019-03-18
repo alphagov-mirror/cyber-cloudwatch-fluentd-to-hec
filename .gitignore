@@ -1,1 +1,8 @@
 *pycache*
+*.egg-info
+venv
+.coverage
+.target
+*.zip
+*.pytest_cache
+*.tox
