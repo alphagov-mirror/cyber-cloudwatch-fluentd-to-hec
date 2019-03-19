@@ -5,7 +5,7 @@ target_dir:
 	mkdir -p .target
 
 copy_src: target_dir
-	cp fluentdhec/* .target
+	cp fluentdhec/*.py .target
 
 add_deps: target_dir
 	pip3 install -r requirements.txt --system -t .target
