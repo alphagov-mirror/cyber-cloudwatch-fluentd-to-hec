@@ -6,3 +6,4 @@ venv
 *.zip
 *.pytest_cache
 *.tox
+htmlcov
