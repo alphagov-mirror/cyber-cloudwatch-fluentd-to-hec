@@ -23,10 +23,12 @@ def lambda_handler(event, context):
     uncompressed_data = gzip.decompress(compressed_data)
     data = json.loads(uncompressed_data)
 
+    payload = None
     if 'k8s' in os.environ['SPLUNK_INDEX']:
         payload = build_payload_k8s(data)
     if 'hsm' in os.environ['SPLUNK_INDEX']:
         payload = build_payload_hsm(data, context)
+    if payload:
         send_to_hec(payload)
 
 
