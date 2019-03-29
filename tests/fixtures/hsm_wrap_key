@@ -8,3 +8,4 @@ Response : 0:HSM Return: SUCCESS
 Log type : MGMT_KEY_DETAILS_LOG (1)
 Priv/Secret Key Handle : 6
 Public Key Handle : 0
+Key Handle	: 131477

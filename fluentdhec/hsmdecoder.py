@@ -15,7 +15,8 @@ def jsoniser(message):
         r'User Name\s+: (?P<username>.*)',
         r'User Type\s+: (?P<usertype>.*)',
         r'Priv/Secret Key Handle\s+: (?P<private_key_handle>.*)',
-        r'Public Key Handle\s+: (?P<public_key_handle>.*)'
+        r'Public Key Handle\s+: (?P<public_key_handle>.*)',
+        r'^Key Handle\s+: (?P<key_handle>.*)'
     ]
     d = {}
     for regex in regexs:

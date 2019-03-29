@@ -69,3 +69,8 @@ def test_jsonizer_can_extract_private_key_handle(hsm_wrap_key):
 
 def test_jsonizer_can_extract_public_key_handle(hsm_wrap_key):
     assert hsm_wrap_key['public_key_handle'] == '0'
+
+
+def test_jsonizer_can_extract_public_key_handle(hsm_wrap_key):
+    print(hsm_wrap_key)
+    assert hsm_wrap_key['key_handle'] == '131477'

@@ -1,7 +1,7 @@
 # lambda_function.py
 Entry point for lambda function. The cloudwatch event is sent to `lambda_handler` for processing.
 
-# pyhec
+# hec
 A module for sending data to the splunk HEC.
 
 # hsmdecoder

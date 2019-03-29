@@ -2,15 +2,14 @@ import os
 import gzip
 import json
 import base64
-from pyhec import PyHEC
+from hec import HEC
 import hsmdecoder
 
 """
 This lambda function requires two variables to be set:
- - SPLUNK_HEC_URL - http-inputs-gds.splunkcloud.com
- - SPLUNK_HEC_TOKEN - Generate from:
-   https://gds.splunkcloud.com/en-GB/manager/search/http-eventcollector
- - SPLUNK_INDEX - Name of the index agreed upon
+ - SPLUNK_HEC_URL - http-inputs-ORG.splunkcloud.com
+ - SPLUNK_HEC_TOKEN -
+ - SPLUNK_INDEX - Destination index
 
 This takes kubernetes fluentd and HSM audit log events from cloudwatch
 logs and sends them to the splunk HEC
@@ -66,5 +65,5 @@ def build_payload_hsm(data, context):
 
 
 def send_to_hec(payload):
-    hec = PyHEC(os.environ['SPLUNK_HEC_TOKEN'], os.environ['SPLUNK_HEC_URL'])
+    hec = HEC(os.environ['SPLUNK_HEC_TOKEN'], os.environ['SPLUNK_HEC_URL'])
     hec.send(payload)
