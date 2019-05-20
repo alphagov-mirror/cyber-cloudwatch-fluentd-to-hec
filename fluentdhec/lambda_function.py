@@ -3,6 +3,7 @@ import gzip
 import json
 import base64
 import re
+import dateparser
 from pyhec import PyHEC
 from datetime import datetime
 import hsmdecoder
@@ -36,13 +37,18 @@ def lambda_handler(event, context):
 
 def extract_time(message):
     res = False
-    regex = r'(?:[A-Z]+\s\[|usecs:)(?P<timestamp>[0-9\-\: ]+)'
+    regex = r'[A-Z]+\s\[(?P<timestamp>[^]]+)|usecs:(?P<usec>[0-9]+)'
     match = re.search(regex, message)
     if match:
-        res = match.group(1)
+        for poss_matches in ["timestamp", "usec"]:
+            if match.groupdict()[poss_matches] is not None:
+                res = match.groupdict()[poss_matches]
+                break
+
         if not res.isdigit():
             try:
-                res = datetime.strptime(res, '%Y-%m-%d %H:%M:%S').timestamp()
+                dtmp = dateparser.parse(res)
+                res = int(dtmp.timestamp())
             except Exception as e:
                 print(f'fluentdhec.lambda_handler:extract_time: error: {e}')
         else:
