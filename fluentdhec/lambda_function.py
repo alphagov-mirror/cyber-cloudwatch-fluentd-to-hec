@@ -36,23 +36,18 @@ def lambda_handler(event, context):
 
 
 def extract_time(message):
-    res = False
-    regex = r'[A-Z]+\s\[(?P<timestamp>[^]]+)|usecs:(?P<usec>[0-9]+)'
+    regex = r'[A-Z]+\s\[(?P<timestamp>[^],]+)|usecs:(?P<usec>[0-9]+)'
     match = re.search(regex, message)
-    if match:
-        for poss_matches in ["timestamp", "usec"]:
-            if match.groupdict()[poss_matches] is not None:
-                res = match.groupdict()[poss_matches]
-                break
 
-        if not res.isdigit():
-            try:
-                dtmp = dateparser.parse(res)
-                res = int(dtmp.timestamp())
-            except Exception as e:
-                print(f'fluentdhec.lambda_handler:extract_time: error: {e}')
-        else:
-            res = int(res)
+    try:
+        res = [
+            int(dateparser.parse(timestamp).timestamp())
+            for timestamp in match.groupdict().values()
+            if timestamp
+        ][0]
+    except AttributeError:
+        res = False
+
     return res
 
 
