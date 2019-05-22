@@ -60,9 +60,16 @@ def test_syslog_2_extract_time():
 
 
 def test_syslog_3_extract_time():
-        message = "syslog INFO 1997-07-16T19:20+01:00 temp"
-        resp = fluentdhec.lambda_function.extract_time(message)
-        assert resp == 869077200
+    message = "syslog INFO 1997-07-16T19:20+01:00 temp"
+    resp = fluentdhec.lambda_function.extract_time(message)
+    assert resp == 869077200
+
+
+def test_syslog_4_extract_time():
+    # should only match the first time
+    message = "syslog 2019 May 20 04:01:30 PM test 1997-07-16T19:20+01:00"
+    resp = fluentdhec.lambda_function.extract_time(message)
+    assert resp == 1558364490
 
 
 def test_usec_1_extract_time():
