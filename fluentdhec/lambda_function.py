@@ -46,7 +46,7 @@ def extract_time(message):
     # rTime matches timestamps with optional seconds and optional timezones
     rTime = rf"\d\d\:\d\d(?:\:\d\d)?(?:[\.,]\d+)?(?:Z| AM| PM|{rTimeZone})?"
 
-    regex = rf'(?P<t>{rDOrY}.{rMonth}.{rDOrY}?.{rTime})|usecs:(?P<s>[0-9]+)'
+    regex = rf'(?P<t>{rDOrY}.{rMonth}.{rDOrY}.{rTime})|usecs:(?P<s>[0-9]+)'
     match = re.search(regex, message)
 
     try:
