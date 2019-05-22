@@ -35,6 +35,55 @@ def context():
     return o
 
 
+def test_invalid_extract_time():
+    message = "syslog nope temp"
+    resp = fluentdhec.lambda_function.extract_time(message)
+    assert not resp
+
+
+def test_syslog_1_extract_time():
+    message = "syslog INFO [20/05/2019 16:01:30.123] temp"
+    resp = fluentdhec.lambda_function.extract_time(message)
+    assert resp == 1558364490
+
+
+def test_syslog_1_extract_time_with_comma():
+    message = "syslog INFO [20/05/2019 16:01:30,456] temp"
+    resp = fluentdhec.lambda_function.extract_time(message)
+    assert resp == 1558364490
+
+
+def test_syslog_2_extract_time():
+    message = "syslog INFO [2019 May 20 04:01:30 PM] temp"
+    resp = fluentdhec.lambda_function.extract_time(message)
+    assert resp == 1558364490
+
+
+def test_syslog_3_extract_time():
+    message = "syslog INFO 1997-07-16T19:20+01:00 temp"
+    resp = fluentdhec.lambda_function.extract_time(message)
+    assert resp == 869077200
+
+
+def test_syslog_4_extract_time():
+    # should only match the first time
+    message = "syslog 2019 May 20 04:01:30 PM test 1997-07-16T19:20+01:00"
+    resp = fluentdhec.lambda_function.extract_time(message)
+    assert resp == 1558364490
+
+
+def test_usec_1_extract_time():
+    message = "blah usecs:1558360830.123 test usec:12345 end"
+    resp = fluentdhec.lambda_function.extract_time(message)
+    assert resp == 1558360830
+
+
+def test_usec_2_extract_time():
+    message = "blah usecs:1558360830 end"
+    resp = fluentdhec.lambda_function.extract_time(message)
+    assert resp == 1558360830
+
+
 def test_lf_send_payload_k8s(k8s_event, context, mocker):
     mocker.patch.dict(os.environ, {"SPLUNK_INDEX": "k8s"})
     mocker.patch('fluentdhec.lambda_function.send_to_hec')

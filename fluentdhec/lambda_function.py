@@ -2,7 +2,10 @@ import os
 import gzip
 import json
 import base64
+import re
+import dateparser
 from pyhec import PyHEC
+from datetime import datetime
 import hsmdecoder
 
 """
@@ -32,19 +35,51 @@ def lambda_handler(event, context):
         send_to_hec(payload)
 
 
+def extract_time(message):
+    # this matches date and 2 / 4 digit year values (19 vs 2019)
+    # rDOrY could be either at start or end (2019 MM DD or DD MM 2019)
+    rDOrY = r"\d{2,4}"
+    # rMonth could be character (May) or 2 digit (05)
+    rMonth = r"(?:[a-zA-Z]+|\d\d)"
+    # for optional timezones
+    rTimeZone = r"[\+-]\d\d\:?\d\d"
+    # rTime matches timestamps with optional seconds and optional timezones
+    rTime = rf"\d\d\:\d\d(?:\:\d\d)?(?:[\.,]\d+)?(?:Z| AM| PM|{rTimeZone})?"
+
+    regex = rf'(?P<t>{rDOrY}.{rMonth}.{rDOrY}.{rTime})|usecs:(?P<s>[0-9]+)'
+    match = re.search(regex, message)
+
+    try:
+        res = [
+            int(dateparser.parse(timestamp.replace(",", ".")).timestamp())
+            for timestamp in match.groupdict().values()
+            if timestamp
+        ][0]
+    except AttributeError:
+        res = False
+
+    return res
+
+
 def build_payload_k8s(data):
     payload = ""
     log_events = data['logEvents']
     cluster_name = data['logGroup']
     for log in log_events:
-        log = json.loads(log['message'])
+        jlog = json.loads(log['message'])
+
         event = {
-            "host": log['kubernetes']['pod_name'],
+            "host": jlog['kubernetes']['pod_name'],
             "source": cluster_name,
-            "sourcetype": log['kubernetes']['container_name'],
+            "sourcetype": jlog['kubernetes']['container_name'],
             "index": os.environ['SPLUNK_INDEX'],
-            "event": log['log']
+            "event": jlog['log']
         }
+
+        time = extract_time(jlog['log'])
+        if time:
+            event["time"] = time
+
         payload += json.dumps(event)
     return payload
 
@@ -61,6 +96,11 @@ def build_payload_hsm(data, context):
             "index": os.environ['SPLUNK_INDEX'],
             "event": hsmdecoder.jsoniser(log['message'])
         }
+
+        time = extract_time(log['message'])
+        if time:
+            event["time"] = time
+
         payload += json.dumps(event)
     return payload
 
