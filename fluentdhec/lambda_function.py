@@ -26,11 +26,14 @@ def lambda_handler(event, context):
     uncompressed_data = gzip.decompress(compressed_data)
     data = json.loads(uncompressed_data)
 
-    payload = None
+    payload = False
     if 'k8s' in os.environ['SPLUNK_INDEX']:
         payload = build_payload_k8s(data)
     if 'hsm' in os.environ['SPLUNK_INDEX']:
         payload = build_payload_hsm(data, context)
+    if 'vpc' in os.environ['SPLUNK_INDEX']:
+        # print(b64encoded_data)
+        payload = build_payload_vpc(data, context)
     if payload:
         send_to_hec(payload)
 
@@ -100,6 +103,26 @@ def build_payload_hsm(data, context):
         time = extract_time(log['message'])
         if time:
             event["time"] = time
+
+        payload += json.dumps(event)
+    return payload
+
+
+def build_payload_vpc(data, context):
+    payload = ""
+    log_events = data['logEvents']
+    cluster_name = data['logGroup']
+    for log in log_events:
+        event = {
+            "host": cluster_name,
+            "source": context.function_name,
+            "sourcetype": "aws:cloudwatchlogs:vpcflow",
+            "index": os.environ['SPLUNK_INDEX'],
+            "event": log['message'],
+        }
+
+        if "timestamp" in log:
+            event["time"] = str(int(log['timestamp'] / 1000))
 
         payload += json.dumps(event)
     return payload

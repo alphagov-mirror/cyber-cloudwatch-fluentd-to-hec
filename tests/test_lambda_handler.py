@@ -24,6 +24,13 @@ def hsm_event():
     return j
 
 
+@pytest.fixture
+def vpc_event():
+    with open('tests/fixtures/cloudwatch_logs_vpc.json') as f:
+        j = json.loads(f.read())
+    return j
+
+
 class Oo():
     pass
 
@@ -97,5 +104,15 @@ def test_lf_send_payload_hsm(hsm_event, context, mocker):
     mocker.patch('fluentdhec.lambda_function.send_to_hec')
 
     fluentdhec.lambda_function.lambda_handler(hsm_event, context)
+
+    assert fluentdhec.lambda_function.send_to_hec.call_count == 1
+
+
+def test_lf_send_payload_vpc(vpc_event, context, mocker):
+    # assert True
+    mocker.patch.dict(os.environ, {"SPLUNK_INDEX": "test_data"})
+    mocker.patch('fluentdhec.lambda_function.send_to_hec')
+
+    fluentdhec.lambda_function.lambda_handler(vpc_event, context)
 
     assert fluentdhec.lambda_function.send_to_hec.call_count == 1
