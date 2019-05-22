@@ -36,12 +36,22 @@ def lambda_handler(event, context):
 
 
 def extract_time(message):
-    regex = r'[A-Z]+\s\[(?P<timestamp>[^],]+)|usecs:(?P<usec>[0-9]+)'
+    # this matches date and 2 / 4 digit year values (19 vs 2019)
+    # rDOrY could be either at start or end (2019 MM DD or DD MM 2019)
+    rDOrY = r"\d{2,4}"
+    # rMonth could be character (May) or 2 digit (05)
+    rMonth = r"(?:[a-zA-Z]+|\d\d)"
+    # for optional timezones
+    rTimeZone = r"[\+-]\d\d\:?\d\d"
+    # rTime matches timestamps with optional seconds and optional timezones
+    rTime = rf"\d\d\:\d\d(?:\:\d\d)?(?:[\.,]\d+)?(?:Z| AM| PM|{rTimeZone})?"
+
+    regex = rf'(?P<t>{rDOrY}.{rMonth}.{rDOrY}?.{rTime})|usecs:(?P<s>[0-9]+)'
     match = re.search(regex, message)
 
     try:
         res = [
-            int(dateparser.parse(timestamp).timestamp())
+            int(dateparser.parse(timestamp.replace(",", ".")).timestamp())
             for timestamp in match.groupdict().values()
             if timestamp
         ][0]

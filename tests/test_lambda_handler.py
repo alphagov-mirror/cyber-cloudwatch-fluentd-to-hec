@@ -59,6 +59,12 @@ def test_syslog_2_extract_time():
     assert resp == 1558364490
 
 
+def test_syslog_3_extract_time():
+        message = "syslog INFO 1997-07-16T19:20+01:00 temp"
+        resp = fluentdhec.lambda_function.extract_time(message)
+        assert resp == 869077200
+
+
 def test_usec_1_extract_time():
     message = "blah usecs:1558360830.123 test usec:12345 end"
     resp = fluentdhec.lambda_function.extract_time(message)
