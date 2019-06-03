@@ -18,6 +18,13 @@ def k8s_event():
 
 
 @pytest.fixture
+def k8s_api_event():
+    with open('tests/fixtures/cloudwatch_logs_k8s_api.json') as f:
+        j = json.loads(f.read())
+    return j
+
+
+@pytest.fixture
 def hsm_event():
     with open('tests/fixtures/cloudwatch_logs_hsm.json') as f:
         j = json.loads(f.read())
@@ -99,6 +106,17 @@ def test_lf_send_payload_k8s(k8s_event, context, mocker):
     assert fluentdhec.lambda_function.send_to_hec.call_count == 1
 
 
+def test_lf_send_payload_k8s_api(k8s_api_event, context, mocker):
+    mocker.patch.dict(os.environ, {"SPLUNK_INDEX": "k8s"})
+    mocker.patch('fluentdhec.lambda_function.send_to_hec')
+
+    fluentdhec.lambda_function.lambda_handler(k8s_api_event, context)
+    called_args = fluentdhec.lambda_function.send_to_hec.call_args
+
+    assert fluentdhec.lambda_function.send_to_hec.call_count == 1 and \
+        "generic:k8s" in called_args[0][0]
+
+
 def test_lf_send_payload_hsm(hsm_event, context, mocker):
     mocker.patch.dict(os.environ, {"SPLUNK_INDEX": "hsm"})
     mocker.patch('fluentdhec.lambda_function.send_to_hec')
@@ -109,8 +127,7 @@ def test_lf_send_payload_hsm(hsm_event, context, mocker):
 
 
 def test_lf_send_payload_vpc(vpc_event, context, mocker):
-    # assert True
-    mocker.patch.dict(os.environ, {"SPLUNK_INDEX": "test_data"})
+    mocker.patch.dict(os.environ, {"SPLUNK_INDEX": "vpc"})
     mocker.patch('fluentdhec.lambda_function.send_to_hec')
 
     fluentdhec.lambda_function.lambda_handler(vpc_event, context)

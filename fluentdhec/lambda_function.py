@@ -28,7 +28,7 @@ def lambda_handler(event, context):
 
     payload = False
     if 'k8s' in os.environ['SPLUNK_INDEX']:
-        payload = build_payload_k8s(data)
+        payload = build_payload_k8s(data, context)
     if 'hsm' in os.environ['SPLUNK_INDEX']:
         payload = build_payload_hsm(data, context)
     if 'vpc' in os.environ['SPLUNK_INDEX']:
@@ -64,24 +64,37 @@ def extract_time(message):
     return res
 
 
-def build_payload_k8s(data):
+def build_payload_k8s(data, context):
     payload = ""
     log_events = data['logEvents']
     cluster_name = data['logGroup']
     for log in log_events:
         jlog = json.loads(log['message'])
 
-        event = {
-            "host": jlog['kubernetes']['pod_name'],
-            "source": cluster_name,
-            "sourcetype": jlog['kubernetes']['container_name'],
-            "index": os.environ['SPLUNK_INDEX'],
-            "event": jlog['log']
-        }
+        if "kubernetes" in jlog:
+            event = {
+                "host": jlog['kubernetes']['pod_name'],
+                "source": cluster_name,
+                "sourcetype": jlog['kubernetes']['container_name'],
+                "index": os.environ['SPLUNK_INDEX'],
+                "event": jlog['log']
+            }
 
-        time = extract_time(jlog['log'])
-        if time:
-            event["time"] = time
+            time = extract_time(jlog['log'])
+            if time:
+                event["time"] = time
+        else:
+            event = {
+                "host": cluster_name,
+                "source": context.function_name,
+                "sourcetype": "generic:k8s",
+                "index": os.environ['SPLUNK_INDEX'],
+                "event": log['message']
+            }
+
+            time = extract_time(log['message'])
+            if time:
+                event["time"] = time
 
         payload += json.dumps(event)
     return payload
