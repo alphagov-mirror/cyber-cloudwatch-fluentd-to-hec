@@ -112,7 +112,7 @@ def test_lf_send_payload_k8s_api(k8s_api_event, context, mocker):
 
     fluentdhec.lambda_function.lambda_handler(k8s_api_event, context)
     called_args = fluentdhec.lambda_function.send_to_hec.call_args
-    
+
     assert fluentdhec.lambda_function.send_to_hec.call_count == 1 and \
         "generic:k8s" in called_args[0][0]
 
