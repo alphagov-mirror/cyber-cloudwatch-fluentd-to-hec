@@ -92,7 +92,7 @@ def test_syslog_4_extract_time():
     assert resp == 1558364490
 
 
-def test_syslog_4_extract_time():
+def test_syslog_5_extract_time():
     # should only match the first time
     message = "syslog 2019 May 20 04:01:30 PM test 1997-07-16T19:20+01:00"
     resp = fluentdhec.lambda_function.extract_time(message)
