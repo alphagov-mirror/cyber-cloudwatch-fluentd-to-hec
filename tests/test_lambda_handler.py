@@ -18,6 +18,13 @@ def k8s_event():
 
 
 @pytest.fixture
+def k8s_second_event():
+    with open('tests/fixtures/cloudwatch_logs_k8s_second.json') as f:
+        j = json.loads(f.read())
+    return j
+
+
+@pytest.fixture
 def k8s_api_event():
     with open('tests/fixtures/cloudwatch_logs_k8s_api.json') as f:
         j = json.loads(f.read())
@@ -80,6 +87,12 @@ def test_syslog_3_extract_time():
 
 
 def test_syslog_4_extract_time():
+    message = "syslog INFO [2019/May/20:04:01:30 PM] temp"
+    resp = fluentdhec.lambda_function.extract_time(message)
+    assert resp == 1558364490
+
+
+def test_syslog_4_extract_time():
     # should only match the first time
     message = "syslog 2019 May 20 04:01:30 PM test 1997-07-16T19:20+01:00"
     resp = fluentdhec.lambda_function.extract_time(message)
@@ -104,6 +117,15 @@ def test_lf_send_payload_k8s(k8s_event, context, mocker):
 
     fluentdhec.lambda_function.lambda_handler(k8s_event, context)
     assert fluentdhec.lambda_function.send_to_hec.call_count == 1
+
+
+def test_lf_send_payload_k8s_second(k8s_second_event, context, mocker):
+    mocker.patch.dict(os.environ, {"SPLUNK_INDEX": "k8s"})
+    mocker.patch('fluentdhec.lambda_function.send_to_hec')
+
+    # all the `cloudwatch_logs_k8s_second.json` events are healthchecks
+    fluentdhec.lambda_function.lambda_handler(k8s_second_event, context)
+    assert fluentdhec.lambda_function.send_to_hec.call_count == 0
 
 
 def test_lf_send_payload_k8s_api(k8s_api_event, context, mocker):
