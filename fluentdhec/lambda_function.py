@@ -73,7 +73,7 @@ def extract_time(message):
             # need an int of the timestamp (epoch)
             res = int(dt.timestamp())
         except AttributeError as e:
-            print(e)
+            # print(e)
             res = False
 
     return res
@@ -102,7 +102,7 @@ def build_payload_k8s(data, context):
             time = extract_time(jlog['log'])
             if time:
                 event["time"] = time
-                print(time)
+                # print(time)
         else:
             event = {
                 "host": cluster_name,
