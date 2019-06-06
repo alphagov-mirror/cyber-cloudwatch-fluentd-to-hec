@@ -9,7 +9,7 @@ class PyHEC:
 
     def send(self, payload):
         headers = {'Authorization': f'Splunk {self.token}'}
-        timeout = int(s.getenv('SPLUNK_HEC_TIMEOUT', '10'))
+        timeout = int(os.getenv('SPLUNK_HEC_TIMEOUT', '10'))
         try:
             r = requests.post(
                 self.uri,
