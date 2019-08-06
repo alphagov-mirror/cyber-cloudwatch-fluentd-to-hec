@@ -92,7 +92,7 @@ def build_payload_k8s(data, context):
 
         if "kubernetes" in jlog:
             event = {
-                "host": jlog['kubernetes']['pod_name'],
+                "host": "%s/%s" % (jlog['kubernetes']['namespace_name'], jlog['kubernetes']['pod_name']),
                 "source": cluster_name,
                 "sourcetype": jlog['kubernetes']['container_name'],
                 "index": os.environ['SPLUNK_INDEX'],
