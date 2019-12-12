@@ -39,8 +39,8 @@ def hsm_event():
 
 
 @pytest.fixture
-def vpc_event():
-    with open('tests/fixtures/cloudwatch_logs_vpc.json') as f:
+def raw_event():
+    with open('tests/fixtures/cloudwatch_logs_raw.json') as f:
         j = json.loads(f.read())
     return j
 
@@ -148,10 +148,10 @@ def test_lf_send_payload_hsm(hsm_event, context, mocker):
     assert fluentdhec.lambda_function.send_to_hec.call_count == 1
 
 
-def test_lf_send_payload_vpc(vpc_event, context, mocker):
-    mocker.patch.dict(os.environ, {"SPLUNK_INDEX": "vpc"})
+def test_lf_send_payload_raw_text(raw_event, context, mocker):
+    mocker.patch.dict(os.environ, {"SPLUNK_INDEX": "k8s"})
     mocker.patch('fluentdhec.lambda_function.send_to_hec')
 
-    fluentdhec.lambda_function.lambda_handler(vpc_event, context)
+    fluentdhec.lambda_function.lambda_handler(raw_event, context)
 
     assert fluentdhec.lambda_function.send_to_hec.call_count == 1
