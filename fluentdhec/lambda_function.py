@@ -34,7 +34,9 @@ def lambda_handler(event, context):
         event["source"] = context.function_name
         event["host"] = data.get('logGroup', 'unknown')
         if "time" not in event:
-            event["time"] = extract_time(log_event['message'])
+            t = extract_time(log_event['message'])
+            if type(t) is int:
+                event["time"] = t
         event_payload = json.dumps(event)
         send_to_hec(event_payload)
 
@@ -70,7 +72,7 @@ def parse_k8s_log_event(log):
         else:
             return parse_raw_event(log)
     except json.decoder.JSONDecodeError as e:
-        print(e, log)
+        print('failed to parse_container_log_event:', e, log)
         return parse_raw_event(log)
 
 
