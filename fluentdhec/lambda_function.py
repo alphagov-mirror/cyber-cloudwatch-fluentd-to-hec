@@ -3,7 +3,7 @@ import gzip
 import json
 import base64
 import re
-from typing import Dict, Union
+from typing import Dict
 
 import dateparser  # type: ignore
 
