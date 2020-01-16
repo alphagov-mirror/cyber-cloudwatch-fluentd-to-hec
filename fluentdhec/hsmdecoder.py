@@ -2,7 +2,7 @@ import json
 import re
 
 
-def jsoniser(message):
+def jsoniser(message: str) -> str:
     regexs = [
         r'Time\s*: (?P<timestamp>[^,]*),',
         r'Sequence No\s+: (?P<sequence_number>.*)',

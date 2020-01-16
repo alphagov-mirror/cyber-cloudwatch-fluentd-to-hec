@@ -58,8 +58,9 @@ def context():
 
 def test_invalid_extract_time():
     message = "syslog nope temp"
-    resp = fluentdhec.lambda_function.extract_time(message)
-    assert not resp
+    with pytest.raises(ValueError) as excinfo:
+        resp = fluentdhec.lambda_function.extract_time(message)
+    assert "No recognisable timestamp" in str(excinfo.value)
 
 
 def test_syslog_1_extract_time():

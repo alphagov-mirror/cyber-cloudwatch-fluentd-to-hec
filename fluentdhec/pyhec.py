@@ -1,13 +1,14 @@
 import requests
 import os
+from typing import Tuple, Union
 
 
 class PyHEC:
-    def __init__(self, token, host, port='443'):
+    def __init__(self, token: str, host: str, port: str='443') -> None:
         self.token = token
         self.uri = f"https://{host}:{port}/services/collector"
 
-    def send(self, payload):
+    def send(self, payload: str) -> Tuple[Union[int, bool], Union[str, bool]]:
         headers = {'Authorization': f'Splunk {self.token}'}
         timeout = int(os.getenv('SPLUNK_HEC_TIMEOUT', '10'))
         try:
