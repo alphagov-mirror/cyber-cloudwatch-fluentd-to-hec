@@ -7,8 +7,8 @@ from typing import Dict
 
 import dateparser  # type: ignore
 
-from pyhec import PyHEC  # type: ignore
-import hsmdecoder  # type: ignore
+from .pyhec import PyHEC
+from . import hsmdecoder
 
 """
 This lambda function requires three variables to be set:
