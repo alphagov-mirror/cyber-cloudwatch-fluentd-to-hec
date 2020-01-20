@@ -43,7 +43,6 @@ def lambda_handler(event: Dict, context) -> None:
             try:
                 event["time"] = extract_time(log_event['message'])
             except Exception as e:
-                event["time"] = False
                 if os.getenv('EVENT_DEBUG') == '1':
                     print(f"WARNING: ignoring {e} in extracting time value "
                           f"from {log_event['message']}")
