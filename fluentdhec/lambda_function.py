@@ -25,26 +25,28 @@ def lambda_handler(event: Dict, context) -> None:
     """
     Sends to the HEC every event that is not a healthcheck event.
     """
-    if os.getenv('EVENT_DEBUG') == '1':
+    if os.getenv("EVENT_DEBUG") == "1":
         print(event)
-    b64encoded_data = event['awslogs']['data']
+    b64encoded_data = event["awslogs"]["data"]
     compressed_data = base64.b64decode(b64encoded_data)
     uncompressed_data = gzip.decompress(compressed_data)
     data = json.loads(uncompressed_data)
-    for log_event in data['logEvents']:
+    for log_event in data["logEvents"]:
         if is_healthcheck(log_event):
             print("INFO: build_payload_k8s: dropping healthchecks")
             continue
         event = parse_log_event(log_event)
         event["source"] = context.function_name
-        event["host"] = data.get('logGroup', 'unknown')
+        event["host"] = data.get("logGroup", "unknown")
         if "time" not in event:
             try:
-                event["time"] = extract_time(log_event['message'])
+                event["time"] = extract_time(log_event["message"])
             except Exception as e:
-                if os.getenv('EVENT_DEBUG') == '1':
-                    print(f"WARNING: ignoring {e} in extracting time value "
-                          f"from {log_event['message']}")
+                if os.getenv("EVENT_DEBUG") == "1":
+                    print(
+                        f"WARNING: ignoring {e} in extracting time value "
+                        f"from {log_event['message']}"
+                    )
         event_payload = json.dumps(event)
         send_to_hec(event_payload)
 
@@ -54,31 +56,33 @@ def is_healthcheck(log_event: Dict) -> bool:
     Returns whether the log event is a healthcheck event
     Requests to `/healthcheck` and k8s probes are healthcheck events
     """
-    return "/healthcheck" in log_event['message'] \
-        and "kube-probe" in log_event['message']
+    return (
+        "/healthcheck" in log_event["message"] and "kube-probe" in log_event["message"]
+    )
 
 
 def parse_log_event(log_event: Dict) -> Dict:
-    if 'hsm' in os.environ['SPLUNK_INDEX']:
+    if "hsm" in os.environ["SPLUNK_INDEX"]:
         return parse_hsm_log_event(log_event)
     return parse_k8s_log_event(log_event)
 
 
 def parse_container_log_event(log_message: Dict) -> Dict:
     return {
-        "host": "%s/%s" % (
-           log_message['kubernetes']['namespace_name'],
-           log_message['kubernetes']['pod_name']
+        "host": "%s/%s"
+        % (
+            log_message["kubernetes"]["namespace_name"],
+            log_message["kubernetes"]["pod_name"],
         ),
-        "sourcetype": log_message['kubernetes']['container_name'],
-        "index": os.environ['SPLUNK_INDEX'],
-        "event": log_message['log']
+        "sourcetype": log_message["kubernetes"]["container_name"],
+        "index": os.environ["SPLUNK_INDEX"],
+        "event": log_message["log"],
     }
 
 
 def parse_k8s_log_event(log: Dict) -> Dict:
     try:
-        log_message = json.loads(log['message'])
+        log_message = json.loads(log["message"])
         if "kubernetes" in log_message:
             return parse_container_log_event(log_message)
         else:
@@ -91,16 +95,16 @@ def parse_k8s_log_event(log: Dict) -> Dict:
 def parse_raw_event(log: Dict) -> Dict:
     return {
         "sourcetype": "generic:k8s",
-        "index": os.environ['SPLUNK_INDEX'],
-        "event": log['message'],
+        "index": os.environ["SPLUNK_INDEX"],
+        "event": log["message"],
     }
 
 
 def parse_hsm_log_event(log: Dict) -> Dict:
     return {
         "sourcetype": "cloudhsm",
-        "index": os.environ['SPLUNK_INDEX'],
-        "event": hsmdecoder.jsoniser(log['message'])
+        "index": os.environ["SPLUNK_INDEX"],
+        "event": hsmdecoder.jsoniser(log["message"]),
     }
 
 
@@ -121,8 +125,10 @@ def extract_time(message: str) -> int:
     month = r"(?:[a-zA-Z]+|\d\d)"
     timezone = r"[\+-]\d\d\:?\d\d"
     time = rf"\d\d\:\d\d(?:\:\d\d)?(?:[\.,]\d+)? ?(?:Z|AM|PM|{timezone})?"
-    time_matcher = (rf"(?P<date>{day_year}.{month}.{day_year})."
-                    rf"(?P<time>{time})|usecs:(?P<timestamp>[0-9]+)")
+    time_matcher = (
+        rf"(?P<date>{day_year}.{month}.{day_year})."
+        rf"(?P<time>{time})|usecs:(?P<timestamp>[0-9]+)"
+    )
     matches = re.search(time_matcher, message)
     if not matches:
         raise ValueError("No recognisable timestamp in message")
