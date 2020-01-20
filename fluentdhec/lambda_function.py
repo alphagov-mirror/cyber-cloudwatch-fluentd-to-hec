@@ -1,15 +1,3 @@
-import os
-import gzip
-import json
-import base64
-import re
-from typing import Dict
-
-import dateparser  # type: ignore
-
-from pyhec import PyHEC  # type: ignore
-import hsmdecoder  # type: ignore
-
 """
 This lambda function requires three variables to be set:
  - SPLUNK_HEC_URL - http-inputs-gds.splunkcloud.com
@@ -20,6 +8,17 @@ This lambda function requires three variables to be set:
 This takes kubernetes fluentd and HSM audit log events from cloudwatch
 logs and sends them to the splunk HEC
 """
+import os
+import gzip
+import json
+import base64
+import re
+from typing import Dict
+
+import dateparser
+
+from pyhec import PyHEC
+import hsmdecoder
 
 
 def lambda_handler(event: Dict, context) -> None:
