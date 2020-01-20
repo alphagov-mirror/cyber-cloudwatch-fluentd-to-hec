@@ -1,11 +1,9 @@
 import requests
 import os
-from typing import Tuple, Union
+from typing import Tuple
 
 
-def send(
-    token: str, host: str, payload: str, port: str = "443"
-) -> Tuple[Union[int, bool], Union[str, bool]]:
+def send(token: str, host: str, payload: str, port: str = "443") -> Tuple[int, str]:
     """
     Sends a request to a Splunk HEC.
     """
@@ -14,10 +12,7 @@ def send(
     timeout = int(os.getenv("SPLUNK_HEC_TIMEOUT", "10"))
     try:
         r = requests.post(uri, payload, headers=headers, verify=True, timeout=timeout,)
-        return (
-            r.status_code,
-            r.text,
-        )
+        return r.status_code, r.text
     except requests.exceptions.Timeout:
         print(f"ERROR: PyHEC:send: Exceeded timeout: {timeout}")
-        return False, False
+        return 408, "timeout"
