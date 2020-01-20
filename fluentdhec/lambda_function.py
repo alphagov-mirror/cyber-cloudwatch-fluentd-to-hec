@@ -17,7 +17,7 @@ from typing import Dict
 
 import dateparser
 
-from pyhec import PyHEC
+import pyhec
 import hsmdecoder
 
 
@@ -105,8 +105,7 @@ def parse_hsm_log_event(log: Dict) -> Dict:
 
 
 def send_to_hec(payload: str) -> None:
-    hec = PyHEC(os.environ['SPLUNK_HEC_TOKEN'], os.environ['SPLUNK_HEC_URL'])
-    hec.send(payload)
+    pyhec.send(os.environ["SPLUNK_HEC_TOKEN"], os.environ["SPLUNK_HEC_URL"], payload)
 
 
 def extract_time(message: str) -> int:
