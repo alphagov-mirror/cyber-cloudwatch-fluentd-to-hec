@@ -4,7 +4,7 @@ from typing import Tuple, Union
 
 
 class PyHEC:
-    def __init__(self, token: str, host: str, port: str='443') -> None:
+    def __init__(self, token: str, host: str, port: str = '443') -> None:
         self.token = token
         self.uri = f"https://{host}:{port}/services/collector"
 
