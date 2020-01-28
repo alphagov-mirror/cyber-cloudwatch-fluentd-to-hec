@@ -32,7 +32,8 @@ def lambda_handler(event, context):
             continue
         event = parse_log_event(log_event)
         event["source"] = context.function_name
-        event["host"] = data.get('logGroup', 'unknown')
+        if "host" not in event:
+            event["host"] = data.get('logGroup', 'unknown')
         if "time" not in event:
             t = extract_time(log_event['message'])
             if type(t) is int:
