@@ -1,12 +1,3 @@
-import os
-import gzip
-import json
-import base64
-import re
-import dateparser
-from pyhec import PyHEC
-import hsmdecoder
-
 """
 This lambda function requires three variables to be set:
  - SPLUNK_HEC_URL - http-inputs-gds.splunkcloud.com
@@ -17,16 +8,30 @@ This lambda function requires three variables to be set:
 This takes kubernetes fluentd and HSM audit log events from cloudwatch
 logs and sends them to the splunk HEC
 """
+import os
+import gzip
+import json
+import base64
+import re
+from typing import Dict
+
+import dateparser
+
+import pyhec
+import hsmdecoder
 
 
-def lambda_handler(event, context):
-    if os.getenv('EVENT_DEBUG', '0') == '1':
+def lambda_handler(event: Dict, context) -> None:
+    """
+    Sends to the HEC every event that is not a healthcheck event.
+    """
+    if os.getenv("EVENT_DEBUG") == "1":
         print(event)
-    b64encoded_data = event['awslogs']['data']
+    b64encoded_data = event["awslogs"]["data"]
     compressed_data = base64.b64decode(b64encoded_data)
     uncompressed_data = gzip.decompress(compressed_data)
     data = json.loads(uncompressed_data)
-    for log_event in data['logEvents']:
+    for log_event in data["logEvents"]:
         if is_healthcheck(log_event):
             print("INFO: build_payload_k8s: dropping healthchecks")
             continue
@@ -34,97 +39,108 @@ def lambda_handler(event, context):
         event["source"] = context.function_name
         if "host" not in event:
             event["host"] = data.get('logGroup', 'unknown')
+
         if "time" not in event:
-            t = extract_time(log_event['message'])
-            if type(t) is int:
-                event["time"] = t
+            try:
+                event["time"] = extract_time(log_event["message"])
+            except Exception as e:
+                if os.getenv("EVENT_DEBUG") == "1":
+                    print(
+                        f"WARNING: ignoring {e} in extracting time value "
+                        f"from {log_event['message']}"
+                    )
         event_payload = json.dumps(event)
         send_to_hec(event_payload)
 
 
-def is_healthcheck(log_event):
-    return "/healthcheck" in log_event['message'] \
-        and "kube-probe" in log_event['message']
+def is_healthcheck(log_event: Dict) -> bool:
+    """
+    Returns whether the log event is a healthcheck event
+    Requests to `/healthcheck` and k8s probes are healthcheck events
+    """
+    return (
+        "/healthcheck" in log_event["message"] and "kube-probe" in log_event["message"]
+    )
 
 
-def parse_log_event(log_event):
-    if 'hsm' in os.environ['SPLUNK_INDEX']:
+def parse_log_event(log_event: Dict) -> Dict:
+    if "hsm" in os.environ["SPLUNK_INDEX"]:
         return parse_hsm_log_event(log_event)
     return parse_k8s_log_event(log_event)
 
 
-def parse_container_log_event(jlog):
+def parse_container_log_event(log_message: Dict) -> Dict:
     return {
-        "host": "%s/%s" % (
-           jlog['kubernetes']['namespace_name'],
-           jlog['kubernetes']['pod_name']
+        "host": "%s/%s"
+        % (
+            log_message["kubernetes"]["namespace_name"],
+            log_message["kubernetes"]["pod_name"],
         ),
-        "sourcetype": jlog['kubernetes']['container_name'],
-        "index": os.environ['SPLUNK_INDEX'],
-        "event": jlog['log']
+        "sourcetype": log_message["kubernetes"]["container_name"],
+        "index": os.environ["SPLUNK_INDEX"],
+        "event": log_message["log"],
     }
 
 
-def parse_k8s_log_event(log):
+def parse_k8s_log_event(log: Dict) -> Dict:
     try:
-        jlog = json.loads(log['message'])
-        if "kubernetes" in jlog:
-            return parse_container_log_event(jlog)
+        log_message = json.loads(log["message"])
+        if "kubernetes" in log_message:
+            return parse_container_log_event(log_message)
         else:
             return parse_raw_event(log)
     except json.decoder.JSONDecodeError as e:
-        print('failed to parse_container_log_event:', e, log)
+        print(f"ERROR: {e} - {log}")
         return parse_raw_event(log)
 
 
-def parse_raw_event(log):
+def parse_raw_event(log: Dict) -> Dict:
     return {
         "sourcetype": "generic:k8s",
-        "index": os.environ['SPLUNK_INDEX'],
-        "event": log['message'],
+        "index": os.environ["SPLUNK_INDEX"],
+        "event": log["message"],
     }
 
 
-def parse_hsm_log_event(log):
+def parse_hsm_log_event(log: Dict) -> Dict:
     return {
         "sourcetype": "cloudhsm",
-        "index": os.environ['SPLUNK_INDEX'],
-        "event": hsmdecoder.jsoniser(log['message'])
+        "index": os.environ["SPLUNK_INDEX"],
+        "event": hsmdecoder.jsoniser(log["message"]),
     }
 
 
-def send_to_hec(payload):
-    hec = PyHEC(os.environ['SPLUNK_HEC_TOKEN'], os.environ['SPLUNK_HEC_URL'])
-    hec.send(payload)
+def send_to_hec(payload: str) -> None:
+    pyhec.send(os.environ["SPLUNK_HEC_TOKEN"], os.environ["SPLUNK_HEC_URL"], payload)
 
 
-def extract_time(message):
-    # this matches date and 2 / 4 digit year values (19 vs 2019)
-    # rDY could be either at start or end (2019 MM DD or DD MM 2019)
-    rDY = r"\d{2,4}"
-    # rMon could be character (May) or 2 digit (05)
-    rMon = r"(?:[a-zA-Z]+|\d\d)"
-    # for optional timezones
-    rTimeZone = r"[\+-]\d\d\:?\d\d"
-    # rTime matches timestamps with optional seconds and optional timezones
-    rTime = rf"\d\d\:\d\d(?:\:\d\d)?(?:[\.,]\d+)? ?(?:Z|AM|PM|{rTimeZone})?"
-    regex = rf'(?P<d>{rDY}.{rMon}.{rDY}).(?P<t>{rTime})|usecs:(?P<s>[0-9]+)'
-    matches = re.search(regex, message)
-    res = False
-    # if there are no matches, return false
+def extract_time(message: str) -> int:
+    """
+    Parses a message to return a timestamp in seconds.
+
+    >>> extract_time("usecs:12345")
+    12345
+    >>> extract_time("2009-Feb-13 23:31:30")
+    1234567890
+    """
+    day_year = r"\d{2,4}"
+    month = r"(?:[a-zA-Z]+|\d\d)"
+    timezone = r"[\+-]\d\d\:?\d\d"
+    time = rf"\d\d\:\d\d(?:\:\d\d)?(?:[\.,]\d+)? ?(?:Z|AM|PM|{timezone})?"
+    time_matcher = (
+        rf"(?P<date>{day_year}.{month}.{day_year})."
+        rf"(?P<time>{time})|usecs:(?P<timestamp>[0-9]+)"
+    )
+    matches = re.search(time_matcher, message)
     if not matches:
-        return res
-    # if there's a `usecs` match, use this
-    if matches.group("s"):
-        res = int(matches.group("s"))
-    # use the date and time matches separately to make a string
-    # the dateparser library is particular about certain characters
-    elif matches.group("d") and matches.group("t"):
-        try:
-            date = matches.group("d")
-            time = matches.group("t").replace(",", ".")
-            dt = dateparser.parse(f"{date} {time}")
-            res = int(dt.timestamp())
-        except AttributeError:
-            res = False
-    return res
+        raise ValueError("No recognisable timestamp in message")
+    if matches.group("timestamp"):
+        timestamp_seconds = int(matches.group("timestamp"))
+    elif matches.group("date") and matches.group("time"):
+        date = matches.group("date")
+        time = matches.group("time").replace(",", ".")
+        datetime = dateparser.parse(f"{date} {time}")
+        timestamp_seconds = int(datetime.timestamp())
+    else:
+        raise ValueError("No recognisable timestamp in message")
+    return timestamp_seconds
